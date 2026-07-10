@@ -1,0 +1,57 @@
+{
+  "name": "paperchain",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "description": "A TypeScript protocol library for flat, typed, geometry-free relations between paperdoll bodies.",
+  "author": "Edouard Urcades <edouard@urcad.es>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/urcades/paperchain.git"
+  },
+  "bugs": {
+    "url": "https://github.com/urcades/paperchain/issues"
+  },
+  "homepage": "https://github.com/urcades/paperchain#readme",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "docs",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "paperchain",
+    "paperdoll",
+    "relations",
+    "scene",
+    "game-dev",
+    "typescript"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run typecheck && npm test && npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "paperdoll": "^0.8.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

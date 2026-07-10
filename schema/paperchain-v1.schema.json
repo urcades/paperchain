@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/urcades/paperchain/main/schema/paperchain-v1.schema.json",
+  "title": "paperchain/v1 scene",
+  "description": "A scene: paperdoll bodies embedded by value, declared relation kinds, and a flat table of typed, geometry-free relations between scene addresses. This schema captures the structural laws: shape, ids, known keys, the scene-address grammar (bodyName/address, at least two segments), and the prohibition of toMax on symmetric kinds. Laws requiring evaluation beyond schema are specified in docs/spec.md: body validity (every body in bodies is paper-doll/v3-valid, including reciprocity, planarity, reachability, compatibility, and identity), declared kinds (every relation.kind exists in kinds), existence (every endpoint's first segment names a body in bodies and the remainder resolves within it via paperdoll's address grammar), irreflexivity (when declared on the kind, from !== to), no duplicates (relation identity is (kind, from, to); symmetric kinds canonicalize the endpoint pair), and multiplicity (when declared, fromMax/toMax bound relations per endpoint; symmetric kinds count participation in either position against fromMax).",
+  "type": "object",
+  "required": [
+    "protocol",
+    "bodies",
+    "kinds",
+    "relations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "protocol": {
+      "const": "paperchain/v1"
+    },
+    "bodies": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/body"
+      }
+    },
+    "kinds": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/kindDeclaration"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relation"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "sceneAddress": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)+$"
+    },
+    "kindDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "symmetric": {
+          "type": "boolean"
+        },
+        "irreflexive": {
+          "type": "boolean"
+        },
+        "fromMax": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "toMax": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "if": {
+        "properties": {
+          "symmetric": {
+            "const": true
+          }
+        },
+        "required": [
+          "symmetric"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "toMax"
+          ]
+        }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "required": [
+        "kind",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/sceneAddress"
+        },
+        "to": {
+          "$ref": "#/$defs/sceneAddress"
+        }
+      }
+    },
+    "side": {
+      "enum": [
+        "top",
+        "right",
+        "bottom",
+        "left"
+      ]
+    },
+    "portAddress": {
+      "type": "object",
+      "required": [
+        "vessel",
+        "side"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "vessel": {
+          "$ref": "#/$defs/id"
+        },
+        "side": {
+          "$ref": "#/$defs/side"
+        }
+      }
+    },
+    "acceptToken": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "containedElement": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "$ref": "#/$defs/id"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "data": true,
+        "body": {
+          "$ref": "#/$defs/body"
+        }
+      }
+    },
+    "vessel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accepts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/acceptToken"
+          }
+        },
+        "contains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/containedElement"
+          }
+        },
+        "ports": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "$ref": "#/$defs/portAddress"
+            },
+            "right": {
+              "$ref": "#/$defs/portAddress"
+            },
+            "bottom": {
+              "$ref": "#/$defs/portAddress"
+            },
+            "left": {
+              "$ref": "#/$defs/portAddress"
+            }
+          }
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "required": [
+        "root",
+        "vessels"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/id"
+        },
+        "vessels": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/vessel"
+          }
+        }
+      }
+    }
+  }
+}
