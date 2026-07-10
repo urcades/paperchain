@@ -1,9 +1,11 @@
 import {
   PAPER_DOLL_PROTOCOL,
   formatProtocolErrors,
+  isId,
   parseAddress,
   resolveAddress,
   validateDocument,
+  validateKnownKeys,
   type Body,
   type ProtocolError,
   type ResolvedAddress,
@@ -48,7 +50,6 @@ export type SplitSceneAddress = {
   address: string;
 };
 
-const ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 const KIND_DECLARATION_KEYS = ["symmetric", "irreflexive", "fromMax", "toMax"] as const;
 const RELATION_KEYS = ["kind", "from", "to"] as const;
 
@@ -531,18 +532,6 @@ function validateRelations(
   }
 }
 
-function validateKnownKeys(
-  input: Record<string, unknown>,
-  allowed: readonly string[],
-  path: string,
-  errors: ProtocolError[]
-): void {
-  for (const key of Object.keys(input)) {
-    if (!allowed.includes(key)) {
-      errors.push({ path: `${path}.${key}`, message: `Unknown key "${key}".` });
-    }
-  }
-}
 
 function rewriteBodyPath(path: string, name: string): string {
   const prefix = `$.bodies.${name}`;
@@ -621,8 +610,4 @@ function participationCount(relations: readonly Relation[], kind: KindId, endpoi
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isId(value: unknown): value is string {
-  return typeof value === "string" && ID_PATTERN.test(value);
 }
