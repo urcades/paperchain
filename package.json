@@ -1,6 +1,6 @@
 {
   "name": "paperchain",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": false,
   "license": "MIT",
   "description": "A TypeScript protocol library for flat, typed, geometry-free relations between paperdoll bodies.",

@@ -378,8 +378,11 @@ def _apply_body_entry(body: dict[str, Any], entry: dict[str, Any], path: str) ->
                 return _stale(path, "element")
             return {"ok": True, "value": outcome["body"]}
         source = body["vessels"][entry["from"]].get("contains", [])
-        if entry["index"] >= len(source) or not _json_equal(
-            _canonicalize_element(source[entry["index"]]), _canonicalize_element(entry["element"])
+        # Validation permits integral JSON numbers such as 0.0. Normalize the
+        # host index before indexing, just as the editing reference does.
+        index = int(entry["index"])
+        if index >= len(source) or not _json_equal(
+            _canonicalize_element(source[index]), _canonicalize_element(entry["element"])
         ):
             return _stale(path, "element")
         value = edits.move_element(body, entry["from"], entry["index"], entry["to"])
