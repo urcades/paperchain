@@ -170,6 +170,29 @@ class BodyPatchTests(unittest.TestCase):
         self.assertEqual(before, original_body)
         self.assertEqual(document, original_patch)
 
+    def test_integral_float_move_indices_apply_and_invert(self) -> None:
+        # A direct json.loads caller retains the spelling 0.0 as float. It is
+        # still a valid integer index under the protocol's numeric equality.
+        before = {"root": "root", "vessels": {"root": {"contains": [{"kind": "item"}]}, "free": {}}}
+        after = {"root": "root", "vessels": {"root": {}, "free": {"contains": [{"kind": "item"}]}}}
+        entry = {"op": "moveElement", "from": "root", "index": 0.0, "to": "free", "element": {"kind": "item"}, "toIndex": 0.0}
+        for scene in (False, True):
+            with self.subTest(scene=scene):
+                source = {"protocol": "paperchain/v1", "bodies": {"actor": before}, "kinds": {}, "relations": []} if scene else before
+                target = {"protocol": "paperchain/v1", "bodies": {"actor": after}, "kinds": {}, "relations": []} if scene else after
+                document = scene_patch(dict(entry, body="actor")) if scene else patch(entry)
+                validate = paperfold.validate_scene_patch if scene else paperfold.validate_patch
+                apply = paperfold.apply_scene_patch if scene else paperfold.apply_patch
+                invert = paperfold.invert_scene_patch if scene else paperfold.invert_patch
+                canonicalize = paperfold.canonicalize_scene if scene else paperfold.canonicalize_body
+                original_source, original_document = copy.deepcopy(source), copy.deepcopy(document)
+                self.assertEqual(validate(document), [])
+                applied = apply(source, document)
+                self.assertEqual(applied, {"ok": True, "value": canonicalize(target)})
+                self.assertEqual(apply(applied["value"], invert(document)), {"ok": True, "value": canonicalize(source)})
+                self.assertEqual(source, original_source)
+                self.assertEqual(document, original_document)
+
     def test_apply_executes_all_seven_entry_types(self) -> None:
         """Routing any v1 op to the wrong edit must change one literal result."""
 
