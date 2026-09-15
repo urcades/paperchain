@@ -30,6 +30,7 @@
     "dist",
     "docs",
     "schema",
+    "conformance",
     "README.md",
     "LICENSE"
   ],
@@ -45,10 +46,12 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:conformance:ts": "vitest run test/conformance.test.ts",
+    "test:conformance:python": "python3 -m conformance.python.paper_conformance conformance/cases/*.json"
   },
   "dependencies": {
-    "paperdoll": "^0.8.2"
+    "paperdoll": "^0.8.3"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

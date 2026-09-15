@@ -1,0 +1,413 @@
+{
+  "corpus": "paper-family-conformance/v1",
+  "cases": [
+    {
+      "id": "paperchain-v1.validate.empty-scene",
+      "rule": "paperchain/v1#law-1-structure",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperchain-v1.validate.missing-relations",
+      "rule": "paperchain/v1#law-1-structure",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {}, "kinds": {} }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations"] }
+    },
+    {
+      "id": "paperchain-v1.validate.unknown-relation-key",
+      "rule": "paperchain/v1#law-1-structure",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": { "holds": {} },
+          "relations": [{ "kind": "holds", "from": "alice/root", "to": "alice/root", "weight": 1 }]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.0.weight"] }
+    },
+    {
+      "id": "paperchain-v1.validate.invalid-embedded-body",
+      "rule": "paperchain/v1#law-2-body-validity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "missing", "vessels": { "root": {} } } },
+          "kinds": {},
+          "relations": []
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.bodies.alice.root"] }
+    },
+    {
+      "id": "paperchain-v1.validate.undeclared-kind",
+      "rule": "paperchain/v1#law-3-declared-kinds",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": {},
+          "relations": [{ "kind": "holds", "from": "alice/root", "to": "bob/root" }]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.0.kind"] }
+    },
+    {
+      "id": "paperchain-v1.validate.missing-constructor-vessel",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "holds": {} },
+          "relations": [{ "kind": "holds", "from": "alice/constructor", "to": "bob/root" }]
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.relations.0.from"]
+      }
+    },
+    {
+      "id": "paperchain-v1.validate.explicit-constructor-vessel",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "constructor", "vessels": { "constructor": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "holds": {} },
+          "relations": [{ "kind": "holds", "from": "alice/constructor", "to": "bob/root" }]
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperchain-v1.validate.missing-body-endpoint",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": { "holds": {} },
+          "relations": [{ "kind": "holds", "from": "alice/root", "to": "bob/root" }]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.0.to"] }
+    },
+    {
+      "id": "paperchain-v1.validate.irreflexive-self-relation",
+      "rule": "paperchain/v1#law-5-irreflexivity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": { "blocks": { "irreflexive": true } },
+          "relations": [{ "kind": "blocks", "from": "alice/root", "to": "alice/root" }]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.0"] }
+    },
+    {
+      "id": "paperchain-v1.validate.symmetric-reversed-duplicate",
+      "rule": "paperchain/v1#law-6-no-duplicates",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "linked": { "symmetric": true } },
+          "relations": [
+            { "kind": "linked", "from": "alice/root", "to": "bob/root" },
+            { "kind": "linked", "from": "bob/root", "to": "alice/root" }
+          ]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.1"] }
+    },
+    {
+      "id": "paperchain-v1.validate.asymmetric-reversed-directions",
+      "rule": "paperchain/v1#law-6-no-duplicates",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "follows": { "fromMax": 1, "toMax": 1 } },
+          "relations": [
+            { "kind": "follows", "from": "alice/root", "to": "bob/root" },
+            { "kind": "follows", "from": "bob/root", "to": "alice/root" }
+          ]
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperchain-v1.validate.asymmetric-from-multiplicity",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } },
+            "carol": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "follows": { "fromMax": 1 } },
+          "relations": [
+            { "kind": "follows", "from": "alice/root", "to": "bob/root" },
+            { "kind": "follows", "from": "alice/root", "to": "carol/root" }
+          ]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.1.from"] }
+    },
+    {
+      "id": "paperchain-v1.validate.asymmetric-to-multiplicity",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } },
+            "carol": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "follows": { "toMax": 1 } },
+          "relations": [
+            { "kind": "follows", "from": "alice/root", "to": "carol/root" },
+            { "kind": "follows", "from": "bob/root", "to": "carol/root" }
+          ]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.1.to"] }
+    },
+    {
+      "id": "paperchain-v1.validate.symmetric-endpoint-multiplicity",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": { "root": "root", "vessels": { "root": {} } },
+            "bob": { "root": "root", "vessels": { "root": {} } },
+            "carol": { "root": "root", "vessels": { "root": {} } }
+          },
+          "kinds": { "linked": { "symmetric": true, "fromMax": 1 } },
+          "relations": [
+            { "kind": "linked", "from": "alice/root", "to": "bob/root" },
+            { "kind": "linked", "from": "carol/root", "to": "bob/root" }
+          ]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.1.to"] }
+    },
+    {
+      "id": "paperchain-v1.validate.reflexive-symmetric-counts-twice",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": { "linked": { "symmetric": true, "fromMax": 1 } },
+          "relations": [{ "kind": "linked", "from": "alice/root", "to": "alice/root" }]
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.relations.0.to"] }
+    },
+    {
+      "id": "paperchain-v1.validate.symmetric-to-max-forbidden",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {},
+          "kinds": { "linked": { "symmetric": true, "toMax": 1 } },
+          "relations": []
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.kinds.linked.toMax"] }
+    },
+    {
+      "id": "paperchain-v1.validate.maximum-portable-budget",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {},
+          "kinds": { "linked": { "fromMax": 9007199254740991, "toMax": 9007199254740991 } },
+          "relations": []
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperchain-v1.validate.integral-decimal-budget",
+      "rule": "paperchain/v1#law-7-multiplicity",
+      "subject": "paperchain/v1",
+      "operation": "validateScene",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {},
+          "kinds": { "holds": { "fromMax": 1.0 } },
+          "relations": []
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperchain-v1.resolve.nested-element",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": {
+            "alice": {
+              "root": "torso",
+              "vessels": {
+                "torso": {
+                  "contains": [{ "kind": "item", "id": "pack", "body": { "root": "pocket", "vessels": { "pocket": { "contains": [{ "kind": "item", "id": "rope" }] } } } }]
+                }
+              }
+            }
+          },
+          "kinds": {},
+          "relations": []
+        },
+        "address": "alice/torso/pack/pocket/rope"
+      },
+      "expected": {
+        "outcome": "resolved",
+        "value": { "kind": "element", "vesselId": "pocket", "index": 0, "element": { "kind": "item", "id": "rope" } }
+      }
+    },
+    {
+      "id": "paperchain-v1.resolve.explicit-constructor-vessel",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "constructor", "vessels": { "constructor": {} } } },
+          "kinds": {},
+          "relations": []
+        },
+        "address": "alice/constructor"
+      },
+      "expected": { "outcome": "resolved", "value": { "kind": "vessel", "vesselId": "constructor" } }
+    },
+    {
+      "id": "paperchain-v1.resolve.well-formed-missing-body",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] },
+        "address": "alice/root"
+      },
+      "expected": { "outcome": "unresolved" }
+    },
+    {
+      "id": "paperchain-v1.resolve.well-formed-missing-vessel",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": {},
+          "relations": []
+        },
+        "address": "alice/missing"
+      },
+      "expected": { "outcome": "unresolved" }
+    },
+    {
+      "id": "paperchain-v1.resolve.malformed-bare-body",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": {},
+          "relations": []
+        },
+        "address": "alice"
+      },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "paperchain-v1.resolve.malformed-uppercase",
+      "rule": "paperchain/v1#law-4-existence",
+      "subject": "paperchain/v1",
+      "operation": "resolveSceneAddress",
+      "input": {
+        "scene": {
+          "protocol": "paperchain/v1",
+          "bodies": { "alice": { "root": "root", "vessels": { "root": {} } } },
+          "kinds": {},
+          "relations": []
+        },
+        "address": "Alice/root"
+      },
+      "expected": { "outcome": "error" }
+    }
+  ]
+}
