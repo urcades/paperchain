@@ -1,10 +1,48 @@
 # paperchain/v1 — Specification
 
-Status: v1, hardened 2026-07-10
-Depends on: paper-doll/v3 (the identity/addressing law; paperdoll >= 0.8)
-Lineage: `rfc-paperchain.md` (the pre-RFC whose five decisions are binding here)
+Status: current v1 protocol dialect
+Depends on: paper-doll/v3 (the identity/addressing law)
+Historical lineage: [`rfc-paperchain.md`](rfc-paperchain.md)
 
 This document states the paperchain/v1 scene format and its laws precisely enough to reimplement in another language. The protocol is the document format plus the laws — not the TypeScript library.
+
+## Normative status and operation domains
+<a id="normative-status-and-operation-domains"></a>
+
+This document is normative for `paperchain/v1`. The JSON Schema is a
+structural companion; the RFC is a historical design record. Package and
+dependency versions are listed in the
+[`paper* family compatibility matrix`](https://github.com/urcades/paperdoll/blob/main/docs/family-compatibility.md).
+The family-wide equality definitions are normative in the
+[`paper-doll/v3` specification](https://github.com/urcades/paperdoll/blob/main/docs/spec.md#equality).
+
+`validateScene` accepts any finite JSON value and returns `ProtocolError[]`;
+`parseScene` accepts the same domain and returns a `Result` containing a deep
+copy or validation errors. Invalid JSON values do not make either function
+throw. `assertScene` throws on validation failure.
+
+`parseSceneAddress` and `resolveSceneAddress` throw on malformed address
+syntax. For well-formed syntax, `resolveSceneAddress` returns `null` when the
+named body or inner address is missing. Scene and argument records supplied to
+queries and edits are assumed to satisfy their public structural types; these
+operations are not substitutes for `validateScene`/`parseScene` on external
+JSON. Within that typed caller domain, scene edits and `relationsAt` throw on
+the checked violations documented below. Out-of-domain structural argument
+behavior is unspecified. These statements concern finite JSON values within
+ordinary host memory, stack, execution, and cancellation limits; host resource
+failure is not a protocol verdict.
+
+<a id="portable-json"></a>
+## Optional portable JSON profile
+
+`paperchain/v1` MAY be exchanged under the additive
+[`paper-json-portable/v1` profile](https://github.com/urcades/paperdoll/blob/main/docs/spec.md#portable-json).
+The profile uses finite IEEE 754 binary64 numbers and limits every integral
+result to `-9007199254740991` through `9007199254740991`, inclusive. It applies
+to the complete scene, including kind multiplicity budgets, embedded bodies,
+and opaque element data. Profile conformance is separate from scene validity;
+it does not tighten this dialect or its schema. Exact larger integers belong
+in canonical decimal strings under a consumer-defined field contract.
 
 ## 1. The scene document
 
@@ -50,34 +88,47 @@ A scene address is:
 
 Scene validity is the conjunction of the laws below. Validation collects **all** violations (no early exit except structural dead-ends, e.g. `relations` not being an array) and annotates each with a JSONPath-style path (`$.relations.3.from`).
 
+<a id="law-1-structure"></a>
 ### Law 1 — Structure
 
 The document is an object with exactly the four required keys; `protocol` is exactly `"paperchain/v1"`; `bodies` and `kinds` are objects keyed by lowercase ids; `relations` is an array of `{kind, from, to}` objects; kind declarations have only the four optional keys with the types given above; endpoints are strings in the scene-address grammar.
 
+<a id="law-2-body-validity"></a>
 ### Law 2 — Body validity
 
 Every body in `bodies` is a valid paper-doll/v3 body, judged by the kernel's own validator (wrap as `{protocol: "paper-doll/v3", body}` and delegate). Kernel error paths are re-rooted from `$.body...` to `$.bodies.<name>...`.
 
+<a id="law-3-declared-kinds"></a>
 ### Law 3 — Declared kinds
 
 Every `relation.kind` exists as a key in `kinds`. paperchain never interprets what a kind means.
 
+<a id="law-4-existence"></a>
 ### Law 4 — Existence
 
 Every endpoint resolves: its first segment names a body in `bodies`, and the remainder resolves within that body via the kernel's `resolveAddress` (returning a vessel or an element; `null` or a grammar error is a violation, reported with the endpoint string and body name). Existence is only checked against bodies that individually satisfy law 2 — a broken body already carries its own errors.
 
 Corollary (pre-RFC decision 4): **dangling relations are invalid, strictly.** Deleting a vessel or body out from under a relation does not auto-drop the relation; it invalidates the scene. Cleanup travels in the same transaction as the structural change.
 
+<a id="law-5-irreflexivity"></a>
 ### Law 5 — Irreflexivity (declarable)
 
 When a relation's kind declares `"irreflexive": true`, `from !== to` (string equality of canonical addresses). Irreflexivity is per-kind, never a protocol axiom: you can hold your own hand.
 
+<a id="law-6-no-duplicates"></a>
 ### Law 6 — No duplicates
 
 Relation identity is the triple `(kind, from, to)`. For **symmetric** kinds, identity canonicalizes the endpoint pair: sort the two address strings lexicographically, so `(k, a, b)` and `(k, b, a)` are the same relation. Two relations with the same identity are invalid; the second and every later occurrence is reported, naming the index of the first.
 
+This is the family definition of
+[Paperchain relation equivalence](https://github.com/urcades/paperdoll/blob/main/docs/spec.md#equality):
+symmetric endpoint orientation is ignored for duplicate detection and
+`removeRelation` matching. The stored relation itself retains the orientation
+in which it was added.
+
 Asymmetric kinds do not canonicalize: `follows(a, b)` and `follows(b, a)` are distinct relations and may coexist.
 
+<a id="law-7-multiplicity"></a>
 ### Law 7 — Multiplicity (declarable)
 
 For an **asymmetric** kind `k` declaring `fromMax` (resp. `toMax`): the number of relations of kind `k` whose `from` (resp. `to`) equals a given endpoint is at most `fromMax` (resp. `toMax`).
@@ -86,19 +137,23 @@ For a **symmetric** kind: declaring `toMax` is itself a validation error — sym
 
 Laws 5 and 7, and law 6's symmetric pair-canonicalization, are evaluated only for relations whose kind declaration is itself structurally valid; a malformed declaration already carries its own error and cannot supply reliable symmetry. Law 6's exact-order duplicate detection still runs, treating the kind as asymmetric — two relations identical in `(kind, from, to)` are duplicates under any reading of the declaration.
 
+<a id="operations"></a>
 ## 4. Operations
 
 The reference library exposes pure operations. All return new scenes and never mutate inputs; every destructive or overwriting operation returns what it destroyed, so callers can construct the inverse without diffing.
 
 | Operation | Returns | Throws when |
 |---|---|---|
-| `declareKind(scene, kindId, declaration)` | `Scene` | kind id taken or invalid; declaration malformed (incl. `toMax` on symmetric) |
+| `declareKind(scene, kindId, declaration?)` | `Scene` | kind id taken or invalid; declaration malformed (incl. `toMax` on symmetric) |
 | `deleteKind(scene, kindId)` | `{ scene, declaration }` | kind undeclared; any relation uses it |
 | `insertBody(scene, name, body)` | `Scene` | name taken or invalid; body not paper-doll/v3-valid (kernel errors, formatted) |
 | `deleteBody(scene, name)` | `{ scene, body }` | body missing; **any** relation endpoint enters the body (remove relations first — same transaction) |
 | `addRelation(scene, relation)` | `Scene` | laws 3–7 would be violated |
 | `removeRelation(scene, relation)` | `{ scene, relation }` | no such relation (symmetric kinds match either order; the stored relation is returned) |
 | `relationsAt(scene, sceneAddress)` | `Relation[]` (copies) | address malformed |
+
+Omitting `declaration` from `declareKind` is equivalent to passing `{}`. An
+explicit `null` is still a malformed declaration and throws.
 
 Operations enforce the **local** laws and throw with messages naming the offending thing; they do not re-validate whole bodies. Global validity stays a `validateScene` concern, mirroring the kernel's local/global law split — legitimate multi-step edits pass through globally incomplete states.
 
@@ -126,6 +181,9 @@ All resolved 2026-07-10, alongside the pre-RFC's five decisions:
 - **No auto-repair.** No relation is ever dropped, rewritten, or canonically reordered on the document's behalf.
 - **No geometry.** Relations never participate in layout, planarity, or collision. That is the entire point.
 
-## 7. Forward pointer: paperfold
+## 7. paperfold scene patches
 
-Bodies-by-value (pre-RFC decision 1) and strict dangling (decision 4) together mean a future **paperfold** version must be able to target *scenes*, not only bare bodies: a patch that severs Alice's arm must carry the removal of the rope relation in the same transaction, and the scene is where both facts live. paperchain/v1 is designed so that a scene is a single diffable value for exactly that reason.
+`paperfold/v2` now targets complete paperchain scenes. A patch that severs
+Alice's arm can carry removal of a relation touching that arm in the same
+transaction, and final scene validation enforces strict dangling. See the
+current [`paperfold` specification](https://github.com/urcades/paperfold/blob/main/docs/spec.md#paperfold-v2-scene-patches).

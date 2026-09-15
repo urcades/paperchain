@@ -1,6 +1,6 @@
 {
   "name": "paperchain",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "description": "A TypeScript protocol library for flat, typed, geometry-free relations between paperdoll bodies.",
@@ -23,6 +23,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./conformance/v2": {
+      "types": "./conformance/dist/extended_conformance.d.ts",
+      "import": "./conformance/dist/extended_conformance.js"
     }
   },
   "types": "./dist/index.d.ts",
@@ -30,6 +34,7 @@
     "dist",
     "docs",
     "schema",
+    "conformance",
     "README.md",
     "LICENSE"
   ],
@@ -42,13 +47,16 @@
     "typescript"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "rm -rf dist conformance/dist && tsc -p tsconfig.build.json && tsc -p tsconfig.conformance.json",
     "prepack": "npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:conformance:ts": "vitest run test/conformance.test.ts test/editing-conformance.test.ts",
+    "test:conformance:python": "python3 -m conformance.python.paper_conformance conformance/cases/paperdoll-v3.json conformance/cases/paperchain-v1.json",
+    "test:conformance:extended": "python3 -m conformance.python.extended_corpus conformance/cases/editing-v2.json"
   },
   "dependencies": {
-    "paperdoll": "^0.8.2"
+    "paperdoll": "^0.9.0"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

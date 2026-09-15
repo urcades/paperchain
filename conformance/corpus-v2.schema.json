@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/urcades/paperchain/main/conformance/corpus-v2.schema.json",
+  "title": "Paper family conformance corpus v2",
+  "type": "object",
+  "required": ["corpus", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "corpus": { "const": "paper-family-conformance/v2" },
+    "cases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "asciiId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "json": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "string" },
+        { "type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991 },
+        { "type": "number", "not": { "type": "integer" } },
+        { "type": "array", "items": { "$ref": "#/$defs/json" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/json" } }
+      ]
+    },
+    "input": {
+      "type": "object",
+      "required": ["args"],
+      "additionalProperties": false,
+      "properties": { "args": { "type": "array", "items": { "$ref": "#/$defs/json" } } }
+    },
+    "ok": {
+      "type": "object",
+      "required": ["outcome", "value"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "ok" }, "value": { "$ref": "#/$defs/json" } }
+    },
+    "okBoolean": {
+      "type": "object",
+      "required": ["outcome", "value"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "ok" }, "value": { "type": "boolean" } }
+    },
+    "valid": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "valid" } }
+    },
+    "invalid": {
+      "type": "object",
+      "required": ["outcome", "includesErrorPaths"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "invalid" },
+        "includesErrorPaths": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "error" } }
+    },
+    "conforms": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "conforms" } }
+    },
+    "nonconforming": {
+      "type": "object",
+      "required": ["outcome", "includesErrorPaths"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "nonconforming" },
+        "includesErrorPaths": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "case": {
+      "type": "object",
+      "required": ["id", "rule", "subject", "operation", "input", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/asciiId" },
+        "rule": {
+          "type": "string",
+          "pattern": "^(paper-doll/v3|paperchain/v1|paperfold/v[12]|papermold/v[12])#[a-z0-9-]+$"
+        },
+        "subject": {
+          "enum": ["paper-doll/v3", "paperchain/v1", "paperfold/v1", "paperfold/v2", "papermold/v1", "papermold/v2"]
+        },
+        "operation": { "type": "string" },
+        "input": { "$ref": "#/$defs/input" },
+        "expected": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "subject": { "const": "paper-doll/v3" },
+                "rule": { "pattern": "^paper-doll/v3#" },
+                "operation": { "enum": ["connect", "disconnect", "insertVessel", "deleteVessel", "insertElement", "removeElement", "moveElement"] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paperchain/v1" },
+                "rule": { "pattern": "^paperchain/v1#" },
+                "operation": { "enum": ["declareKind", "deleteKind", "insertBody", "deleteBody", "addRelation", "removeRelation", "relationsAt"] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paperfold/v1" },
+                "rule": { "pattern": "^paperfold/v1#" },
+                "operation": { "enum": ["validatePatch", "applyPatch", "invertPatch", "composePatches", "diffLaws"] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paperfold/v2" },
+                "rule": { "pattern": "^paperfold/v2#" },
+                "operation": { "enum": ["validateScenePatch", "applyScenePatch", "invertScenePatch", "composeScenePatches", "diffSceneLaws"] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "papermold/v1" },
+                "rule": { "pattern": "^papermold/v1#" },
+                "operation": { "enum": ["validateProfiles", "judge", "conforms"] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "papermold/v2" },
+                "rule": { "pattern": "^papermold/v2#" },
+                "operation": { "enum": ["validateSceneProfiles", "judgeBody", "conformsBody", "judgeScene", "conformsScene"] }
+              }
+            }
+          ]
+        },
+        {
+          "if": { "properties": { "operation": { "const": "insertVessel" } } },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 1, "maxItems": 3 } } } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["deleteVessel", "declareKind"] } } },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 2, "maxItems": 3 } } } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "insertElement" } } },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 3, "maxItems": 4 } } } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": ["validatePatch", "invertPatch", "validateScenePatch", "invertScenePatch", "validateProfiles", "validateSceneProfiles"]
+              }
+            }
+          },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 1, "maxItems": 1 } } } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": ["disconnect", "deleteKind", "deleteBody", "addRelation", "removeRelation", "relationsAt", "applyPatch", "composePatches", "diffLaws", "applyScenePatch", "composeScenePatches", "diffSceneLaws"]
+              }
+            }
+          },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 2, "maxItems": 2 } } } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": ["connect", "removeElement", "insertBody", "judge", "conforms", "judgeBody", "conformsBody", "judgeScene", "conformsScene"]
+              }
+            }
+          },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 3, "maxItems": 3 } } } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "moveElement" } } },
+          "then": { "properties": { "input": { "properties": { "args": { "minItems": 4, "maxItems": 4 } } } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["validatePatch", "validateScenePatch", "validateProfiles", "validateSceneProfiles"] } } },
+          "then": { "properties": { "expected": { "oneOf": [{ "$ref": "#/$defs/valid" }, { "$ref": "#/$defs/invalid" }] } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["judge", "judgeBody", "judgeScene"] } } },
+          "then": { "properties": { "expected": { "oneOf": [{ "$ref": "#/$defs/conforms" }, { "$ref": "#/$defs/nonconforming" }, { "$ref": "#/$defs/error" }] } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["conforms", "conformsBody", "conformsScene"] } } },
+          "then": { "properties": { "expected": { "oneOf": [{ "$ref": "#/$defs/okBoolean" }, { "$ref": "#/$defs/error" }] } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["applyPatch", "diffLaws", "applyScenePatch", "diffSceneLaws"] } } },
+          "then": { "properties": { "expected": { "oneOf": [{ "$ref": "#/$defs/ok" }, { "$ref": "#/$defs/invalid" }, { "$ref": "#/$defs/error" }] } } }
+        },
+        {
+          "if": { "properties": { "operation": { "enum": ["connect", "disconnect", "insertVessel", "deleteVessel", "insertElement", "removeElement", "moveElement", "declareKind", "deleteKind", "insertBody", "deleteBody", "addRelation", "removeRelation", "relationsAt", "invertPatch", "composePatches", "invertScenePatch", "composeScenePatches"] } } },
+          "then": { "properties": { "expected": { "oneOf": [{ "$ref": "#/$defs/ok" }, { "$ref": "#/$defs/error" }] } } }
+        }
+      ]
+    }
+  }
+}

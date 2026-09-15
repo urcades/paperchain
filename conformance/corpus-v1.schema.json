@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/urcades/paperchain/main/conformance/corpus-v1.schema.json",
+  "title": "Paper family conformance corpus v1",
+  "type": "object",
+  "required": ["corpus", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "corpus": { "const": "paper-family-conformance/v1" },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "asciiId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "baseCase": {
+      "type": "object",
+      "required": ["id", "rule", "subject", "operation", "input", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/asciiId" },
+        "rule": { "type": "string", "minLength": 1, "pattern": "^(paper-doll/v3|paperchain/v1)#[a-z0-9-]+$" },
+        "subject": { "enum": ["paper-doll/v3", "paperchain/v1"] },
+        "operation": {
+          "enum": ["validateDocument", "resolveAddress", "deriveLayout", "validateScene", "resolveSceneAddress"]
+        },
+        "input": { "type": "object" },
+        "expected": { "type": "object" }
+      }
+    },
+    "valid": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "valid" } }
+    },
+    "invalid": {
+      "type": "object",
+      "required": ["outcome", "includesErrorPaths"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "invalid" },
+        "includesErrorPaths": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "error" } }
+    },
+    "unresolved": {
+      "type": "object",
+      "required": ["outcome"],
+      "additionalProperties": false,
+      "properties": { "outcome": { "const": "unresolved" } }
+    },
+    "resolvedVessel": {
+      "type": "object",
+      "required": ["outcome", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "resolved" },
+        "value": {
+          "type": "object",
+          "required": ["kind", "vesselId"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "vessel" },
+            "vesselId": { "type": "string" }
+          }
+        }
+      }
+    },
+    "resolvedElement": {
+      "type": "object",
+      "required": ["outcome", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "resolved" },
+        "value": {
+          "type": "object",
+          "required": ["kind", "vesselId", "index", "element"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "element" },
+            "vesselId": { "type": "string" },
+            "index": { "type": "integer", "minimum": 0 },
+            "element": { "type": "object" }
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "required": ["outcome", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "const": "layout" },
+        "value": {
+          "type": "object",
+          "required": ["figure", "free", "connections"],
+          "additionalProperties": false,
+          "properties": {
+            "figure": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["x", "y"],
+                "additionalProperties": false,
+                "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+              }
+            },
+            "free": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "connections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["from", "to"],
+                "additionalProperties": false,
+                "properties": {
+                  "from": { "$ref": "#/$defs/endpoint" },
+                  "to": { "$ref": "#/$defs/endpoint" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "required": ["vessel", "side"],
+      "additionalProperties": false,
+      "properties": {
+        "vessel": { "type": "string" },
+        "side": { "enum": ["top", "right", "bottom", "left"] }
+      }
+    },
+    "case": {
+      "allOf": [
+        { "$ref": "#/$defs/baseCase" },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "subject": { "const": "paper-doll/v3" },
+                "operation": { "const": "validateDocument" },
+                "input": {
+                  "type": "object",
+                  "required": ["document"],
+                  "additionalProperties": false,
+                  "properties": { "document": true }
+                },
+                "expected": { "oneOf": [{ "$ref": "#/$defs/valid" }, { "$ref": "#/$defs/invalid" }] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paper-doll/v3" },
+                "operation": { "const": "resolveAddress" },
+                "input": {
+                  "type": "object",
+                  "required": ["body", "address"],
+                  "additionalProperties": false,
+                  "properties": { "body": { "type": "object" }, "address": { "type": "string" } }
+                },
+                "expected": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/error" }, { "$ref": "#/$defs/unresolved" },
+                    { "$ref": "#/$defs/resolvedVessel" }, { "$ref": "#/$defs/resolvedElement" }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paper-doll/v3" },
+                "operation": { "const": "deriveLayout" },
+                "input": {
+                  "type": "object",
+                  "required": ["body"],
+                  "additionalProperties": false,
+                  "properties": { "body": { "type": "object" } }
+                },
+                "expected": { "$ref": "#/$defs/layout" }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paperchain/v1" },
+                "operation": { "const": "validateScene" },
+                "input": {
+                  "type": "object",
+                  "required": ["scene"],
+                  "additionalProperties": false,
+                  "properties": { "scene": true }
+                },
+                "expected": { "oneOf": [{ "$ref": "#/$defs/valid" }, { "$ref": "#/$defs/invalid" }] }
+              }
+            },
+            {
+              "properties": {
+                "subject": { "const": "paperchain/v1" },
+                "operation": { "const": "resolveSceneAddress" },
+                "input": {
+                  "type": "object",
+                  "required": ["scene", "address"],
+                  "additionalProperties": false,
+                  "properties": { "scene": { "type": "object" }, "address": { "type": "string" } }
+                },
+                "expected": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/error" }, { "$ref": "#/$defs/unresolved" },
+                    { "$ref": "#/$defs/resolvedVessel" }, { "$ref": "#/$defs/resolvedElement" }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

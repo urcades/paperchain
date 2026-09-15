@@ -1,0 +1,471 @@
+{
+  "corpus": "paper-family-conformance/v1",
+  "cases": [
+    {
+      "id": "paperdoll-v3.validate.minimal-valid",
+      "rule": "paper-doll/v3#document-grammar",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": { "root": "root", "vessels": { "root": {} } }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.validate.unknown-document-key",
+      "rule": "paper-doll/v3#document-grammar",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": { "root": "root", "vessels": { "root": {} } },
+          "label": "extra"
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.label"] }
+    },
+    {
+      "id": "paperdoll-v3.validate.missing-constructor-root",
+      "rule": "paper-doll/v3#law-1-rootedness",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": { "root": "constructor", "vessels": {} }
+        }
+      },
+      "expected": { "outcome": "invalid", "includesErrorPaths": ["$.body.root"] }
+    },
+    {
+      "id": "paperdoll-v3.validate.explicit-constructor-root",
+      "rule": "paper-doll/v3#law-1-rootedness",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": { "root": "constructor", "vessels": { "constructor": {} } }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.validate.one-way-port",
+      "rule": "paper-doll/v3#law-2-reciprocity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "left",
+            "vessels": {
+              "left": { "ports": { "right": { "vessel": "right", "side": "left" } } },
+              "right": {}
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.left.ports.right"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.non-opposite-port",
+      "rule": "paper-doll/v3#law-3-opposition",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "left",
+            "vessels": {
+              "left": { "ports": { "right": { "vessel": "right", "side": "top" } } },
+              "right": { "ports": { "top": { "vessel": "left", "side": "right" } } }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.left.ports.right", "$.body.vessels.right.ports.top"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.inconsistent-layout",
+      "rule": "paper-doll/v3#law-4-planarity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "body",
+            "vessels": {
+              "body": { "ports": { "top": { "vessel": "head", "side": "bottom" }, "right": { "vessel": "arm", "side": "left" } } },
+              "head": { "ports": { "bottom": { "vessel": "body", "side": "top" }, "right": { "vessel": "hand", "side": "left" } } },
+              "arm": { "ports": { "left": { "vessel": "body", "side": "right" }, "bottom": { "vessel": "hand", "side": "top" } } },
+              "hand": { "ports": { "left": { "vessel": "head", "side": "right" }, "top": { "vessel": "arm", "side": "bottom" } } }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.arm.ports.bottom"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.distinct-vessel-layout-collision",
+      "rule": "paper-doll/v3#law-4-planarity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": { "ports": { "top": { "vessel": "a", "side": "bottom" }, "right": { "vessel": "b", "side": "left" } } },
+              "a": { "ports": { "bottom": { "vessel": "root", "side": "top" }, "right": { "vessel": "x", "side": "left" } } },
+              "b": { "ports": { "left": { "vessel": "root", "side": "right" }, "top": { "vessel": "y", "side": "bottom" } } },
+              "x": { "ports": { "left": { "vessel": "a", "side": "right" } } },
+              "y": { "ports": { "bottom": { "vessel": "b", "side": "top" } } }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.b.ports.top"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.consistent-square-cycle",
+      "rule": "paper-doll/v3#law-4-planarity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": { "ports": { "top": { "vessel": "a", "side": "bottom" }, "right": { "vessel": "b", "side": "left" } } },
+              "a": { "ports": { "bottom": { "vessel": "root", "side": "top" }, "right": { "vessel": "x", "side": "left" } } },
+              "b": { "ports": { "left": { "vessel": "root", "side": "right" }, "top": { "vessel": "x", "side": "bottom" } } },
+              "x": { "ports": { "left": { "vessel": "a", "side": "right" }, "bottom": { "vessel": "b", "side": "top" } } }
+            }
+          }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.validate.unreachable-ported-island",
+      "rule": "paper-doll/v3#law-5-reachability",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": {},
+              "island-a": { "ports": { "right": { "vessel": "island-b", "side": "left" } } },
+              "island-b": { "ports": { "left": { "vessel": "island-a", "side": "right" } } }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.island-a", "$.body.vessels.island-b"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.open-vessel-accepts-anything",
+      "rule": "paper-doll/v3#law-6-compatibility",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": { "root": { "contains": [{ "kind": "item", "type": "key", "id": "brass-key" }] } }
+          }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.validate.sealed-vessel-rejects-element",
+      "rule": "paper-doll/v3#law-6-compatibility",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": { "root": { "accepts": [], "contains": [{ "kind": "item", "id": "key" }] } }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.root.contains.0"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.compatible-typed-element",
+      "rule": "paper-doll/v3#law-6-compatibility",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": {
+                "accepts": [{ "kind": "item", "type": "key" }],
+                "contains": [{ "kind": "item", "type": "key", "id": "brass-key" }]
+              }
+            }
+          }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.validate.invalid-nested-body",
+      "rule": "paper-doll/v3#law-7-recursive-validity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": {
+                "contains": [{ "kind": "item", "id": "pack", "body": { "root": "missing", "vessels": {} } }]
+              }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.root.contains.0.body.root"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.duplicate-local-element-id",
+      "rule": "paper-doll/v3#law-8-identity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "root",
+            "vessels": {
+              "root": { "contains": [{ "kind": "item", "id": "coin" }, { "kind": "item", "id": "coin" }] }
+            }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "invalid",
+        "includesErrorPaths": ["$.body.vessels.root.contains.1.id"]
+      }
+    },
+    {
+      "id": "paperdoll-v3.validate.same-element-id-in-distinct-vessels",
+      "rule": "paper-doll/v3#law-8-identity",
+      "subject": "paper-doll/v3",
+      "operation": "validateDocument",
+      "input": {
+        "document": {
+          "protocol": "paper-doll/v3",
+          "body": {
+            "root": "left",
+            "vessels": {
+              "left": { "contains": [{ "kind": "item", "id": "coin" }] },
+              "right": { "contains": [{ "kind": "item", "id": "coin" }] }
+            }
+          }
+        }
+      },
+      "expected": { "outcome": "valid" }
+    },
+    {
+      "id": "paperdoll-v3.resolve.nested-element",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": {
+          "root": "torso",
+          "vessels": {
+            "torso": {
+              "contains": [{
+                "kind": "item",
+                "id": "pack",
+                "body": {
+                  "root": "pocket",
+                  "vessels": {
+                    "pocket": { "contains": [{ "kind": "item", "id": "rope" }] }
+                  }
+                }
+              }]
+            }
+          }
+        },
+        "address": "torso/pack/pocket/rope"
+      },
+      "expected": {
+        "outcome": "resolved",
+        "value": {
+          "kind": "element",
+          "vesselId": "pocket",
+          "index": 0,
+          "element": { "kind": "item", "id": "rope" }
+        }
+      }
+    },
+    {
+      "id": "paperdoll-v3.resolve.root-vessel",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": { "root": "root", "vessels": { "root": {} } },
+        "address": "root"
+      },
+      "expected": { "outcome": "resolved", "value": { "kind": "vessel", "vesselId": "root" } }
+    },
+    {
+      "id": "paperdoll-v3.resolve.element-array-index",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": {
+          "root": "root",
+          "vessels": {
+            "root": { "contains": [{ "kind": "item", "id": "first" }, { "kind": "item", "id": "second", "data": { "n": 2 } }] }
+          }
+        },
+        "address": "root/second"
+      },
+      "expected": {
+        "outcome": "resolved",
+        "value": { "kind": "element", "vesselId": "root", "index": 1, "element": { "kind": "item", "id": "second", "data": { "n": 2 } } }
+      }
+    },
+    {
+      "id": "paperdoll-v3.resolve.negative-zero-data",
+      "rule": "paper-doll/v3#equality",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": {
+          "root": "root",
+          "vessels": {
+            "root": { "contains": [{ "kind": "item", "id": "offset", "data": -0 }] }
+          }
+        },
+        "address": "root/offset"
+      },
+      "expected": {
+        "outcome": "resolved",
+        "value": { "kind": "element", "vesselId": "root", "index": 0, "element": { "kind": "item", "id": "offset", "data": 0 } }
+      }
+    },
+    {
+      "id": "paperdoll-v3.resolve.well-formed-missing-vessel",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": { "root": "root", "vessels": { "root": {} } },
+        "address": "missing"
+      },
+      "expected": { "outcome": "unresolved" }
+    },
+    {
+      "id": "paperdoll-v3.resolve.well-formed-nested-without-body",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": { "root": "root", "vessels": { "root": { "contains": [{ "kind": "item", "id": "key" }] } } },
+        "address": "root/key/inside"
+      },
+      "expected": { "outcome": "unresolved" }
+    },
+    {
+      "id": "paperdoll-v3.resolve.malformed-uppercase",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": { "root": "root", "vessels": { "root": {} } },
+        "address": "Root"
+      },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "paperdoll-v3.resolve.malformed-empty-segment",
+      "rule": "paper-doll/v3#addressing",
+      "subject": "paper-doll/v3",
+      "operation": "resolveAddress",
+      "input": {
+        "body": { "root": "root", "vessels": { "root": {} } },
+        "address": "root//key"
+      },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "paperdoll-v3.layout.normalized-figure-free-connections",
+      "rule": "paper-doll/v3#layout",
+      "subject": "paper-doll/v3",
+      "operation": "deriveLayout",
+      "input": {
+        "body": {
+          "root": "torso",
+          "vessels": {
+            "torso": { "ports": { "right": { "vessel": "arm", "side": "left" }, "top": { "vessel": "head", "side": "bottom" } } },
+            "zeta": {},
+            "head": { "ports": { "bottom": { "vessel": "torso", "side": "top" } } },
+            "alpha": {},
+            "arm": { "ports": { "left": { "vessel": "torso", "side": "right" } } }
+          }
+        }
+      },
+      "expected": {
+        "outcome": "layout",
+        "value": {
+          "figure": { "torso": { "x": 0, "y": 0 }, "arm": { "x": 1, "y": 0 }, "head": { "x": 0, "y": -1 } },
+          "free": ["alpha", "zeta"],
+          "connections": [
+            { "from": { "vessel": "arm", "side": "left" }, "to": { "vessel": "torso", "side": "right" } },
+            { "from": { "vessel": "head", "side": "bottom" }, "to": { "vessel": "torso", "side": "top" } }
+          ]
+        }
+      }
+    }
+  ]
+}

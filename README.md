@@ -78,7 +78,7 @@ Dangling relations are invalid, strictly: deleting a body out from under a relat
 
 ## What paperchain deliberately does not do
 
-Containment-shaped relations dissolve into paperdoll recursion. Trading needs a desk — a third *body* with escrow vessels — and zero relations; likewise chests, mounts-as-saddle-containment, docking-as-hangar. And there are no state-vetoes: no relation law inspects body contents ("may only grapple with a free hand" is consumer judgment, or eventually [papermold](https://github.com/urcades/papermold)'s). paperchain validates structure: existence, multiplicity, symmetry, irreflexivity. Nothing else.
+Containment-shaped relations dissolve into paperdoll recursion. Trading needs a desk — a third *body* with escrow vessels — and zero relations; likewise chests, mounts-as-saddle-containment, docking-as-hangar. And there are no state-vetoes: no relation law inspects body contents ("may only grapple with a free hand" is consumer judgment, including a [papermold](https://github.com/urcades/papermold) profile). paperchain validates structure: existence, multiplicity, symmetry, irreflexivity. Nothing else.
 
 ## Editing Scenes
 
@@ -108,17 +108,19 @@ Operations enforce the local laws (declared kinds, existence, irreflexivity, dup
 
 - [`paperdoll`](https://github.com/urcades/paperdoll) — the kernel: bodies, vessels, containment, connection, the address grammar (law 8 is what makes scene addresses possible).
 - [`paperchain`](https://github.com/urcades/paperchain) — this library: relations between addresses across bodies.
-- [`paperfold`](https://github.com/urcades/paperfold) — dynamics: transactional patches over bodies (scene targeting — where dangling-relation cleanup gives its transactions a real job — is the next phase).
+- [`paperfold`](https://github.com/urcades/paperfold) — dynamics: transactional patches over bodies (`paperfold/v1`) and complete scenes (`paperfold/v2`).
 - [`papermold`](https://github.com/urcades/papermold) — judgment: profiles and structural conformance ("is this really mech-shaped?").
 
 ## Portability
 
-The protocol is not the TypeScript library — it is the document format plus the laws. [`schema/paperchain-v1.schema.json`](schema/paperchain-v1.schema.json) is a JSON Schema (2020-12) capturing the structural laws; the laws beyond schema expressiveness are specified in [`docs/spec.md`](docs/spec.md). Any language can validate paperchain scenes.
+The protocol is the document format plus the laws in the current normative [`paperchain/v1 specification`](docs/spec.md). [`schema/paperchain-v1.schema.json`](schema/paperchain-v1.schema.json) is its structural JSON Schema (2020-12) companion, not a complete specification. Package versions and dependency floors are listed in the [`paper* family compatibility matrix`](https://github.com/urcades/paperdoll/blob/main/docs/family-compatibility.md). Any language can validate paperchain scenes.
+
+The optional [`paper-json-portable/v1` profile](docs/spec.md#portable-json) limits integral binary64 values, including multiplicity budgets and opaque nested data, to `±9007199254740991`. `validatePortableJson` checks that independent second verdict; larger exact integers should use canonical decimal strings under an application field contract.
 
 ## API
 
-- constants: `PAPERCHAIN_PROTOCOL`
-- validation: `parseScene`, `assertScene`, `validateScene`, `formatProtocolErrors` (re-exported from paperdoll)
+- constants: `PAPERCHAIN_PROTOCOL`, `MAX_PORTABLE_INTEGER` (re-exported from paperdoll)
+- validation: `parseScene`, `assertScene`, `validateScene`, `validatePortableJson`, `formatProtocolErrors` (portable helpers re-exported from paperdoll)
 - addressing: `parseSceneAddress`, `resolveSceneAddress`
 - kind operations: `declareKind`, `deleteKind`
 - body operations: `insertBody`, `deleteBody`
@@ -130,4 +132,4 @@ Validation is strict: unknown keys anywhere in a scene are rejected, all errors 
 
 ## Design Notes
 
-See [`docs/rfc-paperchain.md`](docs/rfc-paperchain.md) for the pre-RFC that fixed the five hard decisions (recorded 2026-07-10), and [`docs/spec.md`](docs/spec.md) for the hardened v1 specification.
+See [`docs/spec.md`](docs/spec.md) for normative behavior. [`docs/rfc-paperchain.md`](docs/rfc-paperchain.md) is the historical pre-RFC that recorded the original design decisions.
