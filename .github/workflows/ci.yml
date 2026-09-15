@@ -20,7 +20,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run test:conformance:ts
-      - run: python3 -m unittest conformance.python.test_corpus
+      - run: python3 -m unittest discover -s conformance/python -t . -p "test_*.py"
       - run: npm run test:conformance:python
+      - run: npm run test:conformance:extended
       - run: npm run build

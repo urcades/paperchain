@@ -32,6 +32,18 @@ behavior is unspecified. These statements concern finite JSON values within
 ordinary host memory, stack, execution, and cancellation limits; host resource
 failure is not a protocol verdict.
 
+<a id="portable-json"></a>
+## Optional portable JSON profile
+
+`paperchain/v1` MAY be exchanged under the additive
+[`paper-json-portable/v1` profile](https://github.com/urcades/paperdoll/blob/main/docs/spec.md#portable-json).
+The profile uses finite IEEE 754 binary64 numbers and limits every integral
+result to `-9007199254740991` through `9007199254740991`, inclusive. It applies
+to the complete scene, including kind multiplicity budgets, embedded bodies,
+and opaque element data. Profile conformance is separate from scene validity;
+it does not tighten this dialect or its schema. Exact larger integers belong
+in canonical decimal strings under a consumer-defined field contract.
+
 ## 1. The scene document
 
 ```jsonc
@@ -125,19 +137,23 @@ For a **symmetric** kind: declaring `toMax` is itself a validation error — sym
 
 Laws 5 and 7, and law 6's symmetric pair-canonicalization, are evaluated only for relations whose kind declaration is itself structurally valid; a malformed declaration already carries its own error and cannot supply reliable symmetry. Law 6's exact-order duplicate detection still runs, treating the kind as asymmetric — two relations identical in `(kind, from, to)` are duplicates under any reading of the declaration.
 
+<a id="operations"></a>
 ## 4. Operations
 
 The reference library exposes pure operations. All return new scenes and never mutate inputs; every destructive or overwriting operation returns what it destroyed, so callers can construct the inverse without diffing.
 
 | Operation | Returns | Throws when |
 |---|---|---|
-| `declareKind(scene, kindId, declaration)` | `Scene` | kind id taken or invalid; declaration malformed (incl. `toMax` on symmetric) |
+| `declareKind(scene, kindId, declaration?)` | `Scene` | kind id taken or invalid; declaration malformed (incl. `toMax` on symmetric) |
 | `deleteKind(scene, kindId)` | `{ scene, declaration }` | kind undeclared; any relation uses it |
 | `insertBody(scene, name, body)` | `Scene` | name taken or invalid; body not paper-doll/v3-valid (kernel errors, formatted) |
 | `deleteBody(scene, name)` | `{ scene, body }` | body missing; **any** relation endpoint enters the body (remove relations first — same transaction) |
 | `addRelation(scene, relation)` | `Scene` | laws 3–7 would be violated |
 | `removeRelation(scene, relation)` | `{ scene, relation }` | no such relation (symmetric kinds match either order; the stored relation is returned) |
 | `relationsAt(scene, sceneAddress)` | `Relation[]` (copies) | address malformed |
+
+Omitting `declaration` from `declareKind` is equivalent to passing `{}`. An
+explicit `null` is still a malformed declaration and throws.
 
 Operations enforce the **local** laws and throw with messages naming the offending thing; they do not re-validate whole bodies. Global validity stays a `validateScene` concern, mirroring the kernel's local/global law split — legitimate multi-step edits pass through globally incomplete states.
 

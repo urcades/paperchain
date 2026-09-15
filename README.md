@@ -115,10 +115,12 @@ Operations enforce the local laws (declared kinds, existence, irreflexivity, dup
 
 The protocol is the document format plus the laws in the current normative [`paperchain/v1 specification`](docs/spec.md). [`schema/paperchain-v1.schema.json`](schema/paperchain-v1.schema.json) is its structural JSON Schema (2020-12) companion, not a complete specification. Package versions and dependency floors are listed in the [`paper* family compatibility matrix`](https://github.com/urcades/paperdoll/blob/main/docs/family-compatibility.md). Any language can validate paperchain scenes.
 
+The optional [`paper-json-portable/v1` profile](docs/spec.md#portable-json) limits integral binary64 values, including multiplicity budgets and opaque nested data, to `±9007199254740991`. `validatePortableJson` checks that independent second verdict; larger exact integers should use canonical decimal strings under an application field contract.
+
 ## API
 
-- constants: `PAPERCHAIN_PROTOCOL`
-- validation: `parseScene`, `assertScene`, `validateScene`, `formatProtocolErrors` (re-exported from paperdoll)
+- constants: `PAPERCHAIN_PROTOCOL`, `MAX_PORTABLE_INTEGER` (re-exported from paperdoll)
+- validation: `parseScene`, `assertScene`, `validateScene`, `validatePortableJson`, `formatProtocolErrors` (portable helpers re-exported from paperdoll)
 - addressing: `parseSceneAddress`, `resolveSceneAddress`
 - kind operations: `declareKind`, `deleteKind`
 - body operations: `insertBody`, `deleteBody`

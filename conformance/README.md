@@ -20,7 +20,7 @@ The packaged corpus and standard-library-only Python adapter are usable from an
 unpacked release with:
 
 ```sh
-python3 -m conformance.python.paper_conformance conformance/cases/*.json
+python3 -m conformance.python.paper_conformance conformance/cases/paperdoll-v3.json conformance/cases/paperchain-v1.json
 ```
 
 The fixture contract is described by `corpus-v1.schema.json`, with cases in
@@ -80,6 +80,68 @@ the only set-like array normalization in corpus v1.
 Paperchain specifies non-negative integer multiplicity budgets without a
 portable maximum. Corpus v1 keeps accepted integer fixtures within
 `0..9007199254740991`, the exactly representable JavaScript integer range.
-Values above that range are intentionally uncovered. This fixture range is not
-a new protocol bound; a future protocol revision must decide their behavior
-before conformance cases are added.
+Values above that range are intentionally uncovered by corpus v1. This fixture
+range is not a new protocol bound. Corpus v2 enforces the additive
+`paper-json-portable/v1` profile described below.
+
+
+## Extended editing, patch, and judgment corpus (v2)
+
+`paper-family-conformance/v2` adds the seven Doll edits, six Chain edits plus
+`relationsAt`, Fold body/scene patch validation, application, inversion,
+composition and diff laws, and Mold body/scene validation and judgments.
+The exact operation catalog and envelopes are in `corpus-v2.schema.json`.
+Each input is `{"args": [...]}` in the corresponding public API argument order.
+The existing v1 corpus and runner retain their original behavior.
+
+```sh
+npm run test:conformance:extended
+python3 -m unittest discover -s conformance/python -t . -p 'test_*.py'
+```
+
+The independent standard-library Python modules are `paper_edits.py`,
+`paperfold.py`, and `papermold.py`; they implement protocol behavior from the
+specifications without invoking Node. Fold and Mold ship their own fixture
+files and TypeScript adapters. From an installed Fold or Mold package:
+
+```sh
+npm run test:conformance:python
+```
+
+Unlike the v1 source adapter, the generic v2 transport is compiled and available
+as `paperchain/conformance/v2`. It exports strict loading, expected-result
+comparison, and projection helpers. Protocol dispatch stays in each repository's
+adapter; the transport introduces no upward production dependency from Chain.
+
+### Results and equality
+
+- Value-returning operations project `{"outcome":"ok","value":...}`.
+- Validators project `valid` or `invalid`; failed Fold results project `invalid`.
+- Checked precondition exceptions project `error`, distinct from a failed result.
+- Mold judgments project `conforms` or `nonconforming`; boolean `conforms*`
+  operations retain their boolean value.
+- Expected `invalid` and `nonconforming` records use nonempty, unique
+  `includesErrorPaths`. Error wording and extra diagnostic paths are not compared.
+
+Objects compare without member order; arrays remain ordered, and booleans are
+not numbers. Doll editing connection return records normalize undirected endpoint
+orientation and sort displaced connections. Chain relations retain their stored
+orientation. `diffLaws` and `diffSceneLaws` check application, inversion, and
+composition against canonical source/target values without requiring identical
+diff algorithms. Fold also runs seeded cross-language checks: Python applies
+TypeScript-generated patches and inverses, and TypeScript applies Python's.
+
+### Portable numeric evidence
+
+Every v2 corpus number follows `paper-json-portable/v1`: JSON number tokens are
+interpreted as finite IEEE 754 binary64 values, and integral results must be in
+`[-9007199254740991, 9007199254740991]`. This applies recursively, including opaque
+`data`. Negative zero equals zero. Python normalizes safe integral values to
+`int` for indexing, while retaining booleans as booleans. Fractions have binary64
+rounding semantics; the profile does not promise exact decimal arithmetic.
+
+Unsafe integers and overflow are rejected by the corpus loader, rather than
+being used as misleading evidence of agreement. Current dialect validators
+remain broader; use the separately exported `validatePortableJson` to request
+this additional verdict. Exact larger integers in opaque data can be encoded as
+decimal strings. These strings do not replace existing numeric control fields.

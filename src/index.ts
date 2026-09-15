@@ -24,6 +24,6 @@ export type {
   SplitSceneAddress
 } from "./paperchain.js";
 
-export { formatProtocolErrors } from "paperdoll";
+export { MAX_PORTABLE_INTEGER, formatProtocolErrors, validatePortableJson } from "paperdoll";
 
 export type { Body, ProtocolError, ResolvedAddress, Result } from "paperdoll";

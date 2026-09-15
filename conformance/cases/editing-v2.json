@@ -1,0 +1,464 @@
+{
+  "corpus": "paper-family-conformance/v2",
+  "cases": [
+    {
+      "id": "doll-connect-displaces",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "connect",
+      "input": { "args": [
+        { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "b", "side": "left" } } },
+          "b": { "ports": { "left": { "vessel": "a", "side": "right" } } },
+          "c": {}
+        } },
+        { "vessel": "a", "side": "right" },
+        { "vessel": "c", "side": "left" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "c", "side": "left" } } },
+          "b": { "ports": {} },
+          "c": { "ports": { "left": { "vessel": "a", "side": "right" } } }
+        } },
+        "displaced": [{ "from": { "vessel": "a", "side": "right" }, "to": { "vessel": "b", "side": "left" } }]
+      } }
+    },
+    {
+      "id": "doll-connect-rejects-nonopposite",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "connect",
+      "input": { "args": [
+        { "root": "a", "vessels": { "a": {}, "b": {} } },
+        { "vessel": "a", "side": "right" },
+        { "vessel": "b", "side": "top" }
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "doll-disconnect-destruction-record",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "disconnect",
+      "input": { "args": [
+        { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "b", "side": "left" } } },
+          "b": { "ports": { "left": { "vessel": "a", "side": "right" } } }
+        } },
+        { "vessel": "b", "side": "left" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "a", "vessels": { "a": { "ports": {} }, "b": { "ports": {} } } },
+        "removed": { "from": { "vessel": "a", "side": "right" }, "to": { "vessel": "b", "side": "left" } }
+      } }
+    },
+    {
+      "id": "doll-disconnect-empty-port",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "disconnect",
+      "input": { "args": [
+        { "root": "a", "vessels": { "a": {} } },
+        { "vessel": "a", "side": "top" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "a", "vessels": { "a": {} } }, "removed": null
+      } }
+    },
+    {
+      "id": "doll-insert-vessel-bridges",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "insertVessel",
+      "input": { "args": [
+        { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "b", "side": "left" } } },
+          "b": { "ports": { "left": { "vessel": "a", "side": "right" } } }
+        } },
+        { "accepts": [{ "kind": "item", "type": "gem" }] },
+        { "id": "mid", "at": { "vessel": "a", "side": "right" } }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "mid", "side": "left" } } },
+          "b": { "ports": { "left": { "vessel": "mid", "side": "right" } } },
+          "mid": {
+            "accepts": [{ "kind": "item", "type": "gem" }],
+            "ports": {
+              "right": { "vessel": "b", "side": "left" },
+              "left": { "vessel": "a", "side": "right" }
+            }
+          }
+        } },
+        "vesselId": "mid",
+        "bridged": { "from": { "vessel": "a", "side": "right" }, "to": { "vessel": "b", "side": "left" } }
+      } }
+    },
+    {
+      "id": "doll-insert-vessel-constructor-key",
+      "rule": "paper-doll/v3#law-8-identity",
+      "subject": "paper-doll/v3",
+      "operation": "insertVessel",
+      "input": { "args": [
+        { "root": "root", "vessels": { "root": {} } }, {}, { "id": "constructor" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "root", "vessels": { "root": {}, "constructor": {} } },
+        "vesselId": "constructor", "bridged": null
+      } }
+    },
+    {
+      "id": "doll-insert-vessel-duplicate-id",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "insertVessel",
+      "input": { "args": [
+        { "root": "root", "vessels": { "root": {}, "constructor": {} } }, {}, { "id": "constructor" }
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "doll-delete-vessel-collapses",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "deleteVessel",
+      "input": { "args": [
+        { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "b", "side": "left" } } },
+          "b": { "accepts": [{ "kind": "item" }], "ports": {
+            "left": { "vessel": "a", "side": "right" },
+            "right": { "vessel": "c", "side": "left" }
+          } },
+          "c": { "ports": { "left": { "vessel": "b", "side": "right" } } }
+        } },
+        "b", { "collapseOppositeNeighbors": true }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "a", "vessels": {
+          "a": { "ports": { "right": { "vessel": "c", "side": "left" } } },
+          "c": { "ports": { "left": { "vessel": "a", "side": "right" } } }
+        } },
+        "vessel": { "accepts": [{ "kind": "item" }], "ports": {
+          "left": { "vessel": "a", "side": "right" },
+          "right": { "vessel": "c", "side": "left" }
+        } },
+        "collapsed": { "from": { "vessel": "a", "side": "right" }, "to": { "vessel": "c", "side": "left" } }
+      } }
+    },
+    {
+      "id": "doll-delete-vessel-rejects-root",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "deleteVessel",
+      "input": { "args": [{ "root": "root", "vessels": { "root": {} } }, "root"] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "doll-insert-element-typed-container",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "insertElement",
+      "input": { "args": [
+        { "root": "bag", "vessels": { "bag": {
+          "accepts": [{ "kind": "item", "type": "potion" }],
+          "contains": [{ "kind": "item", "type": "potion", "id": "old" }]
+        } } },
+        "bag",
+        { "kind": "item", "type": "potion", "id": "constructor", "data": { "constructor": "safe", "__proto__": "plain-json" } },
+        0
+      ] },
+      "expected": { "outcome": "ok", "value": { "root": "bag", "vessels": { "bag": {
+        "accepts": [{ "kind": "item", "type": "potion" }],
+        "contains": [
+          { "kind": "item", "type": "potion", "id": "constructor", "data": { "constructor": "safe", "__proto__": "plain-json" } },
+          { "kind": "item", "type": "potion", "id": "old" }
+        ]
+      } } } }
+    },
+    {
+      "id": "doll-insert-element-rejects-duplicate",
+      "rule": "paper-doll/v3#law-8-identity",
+      "subject": "paper-doll/v3",
+      "operation": "insertElement",
+      "input": { "args": [
+        { "root": "bag", "vessels": { "bag": { "contains": [{ "kind": "item", "id": "same" }] } } },
+        "bag", { "kind": "item", "id": "same" }
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "doll-remove-element-record",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "removeElement",
+      "input": { "args": [
+        { "root": "bag", "vessels": { "bag": { "contains": [
+          { "kind": "item", "id": "first" }, { "kind": "status", "type": "warm" }
+        ] } } }, "bag", 0
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "body": { "root": "bag", "vessels": { "bag": { "contains": [{ "kind": "status", "type": "warm" }] } } },
+        "element": { "kind": "item", "id": "first" }
+      } }
+    },
+    {
+      "id": "doll-remove-element-rejects-range",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "removeElement",
+      "input": { "args": [{ "root": "bag", "vessels": { "bag": {} } }, "bag", 0] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "doll-move-element-between-typed-containers",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "moveElement",
+      "input": { "args": [
+        { "root": "left", "vessels": {
+          "left": { "contains": [{ "kind": "item", "type": "gem", "id": "ruby" }] },
+          "right": { "accepts": [{ "kind": "item", "type": "gem" }] }
+        } }, "left", 0, "right"
+      ] },
+      "expected": { "outcome": "ok", "value": { "root": "left", "vessels": {
+        "left": { "contains": [] },
+        "right": { "accepts": [{ "kind": "item", "type": "gem" }], "contains": [{ "kind": "item", "type": "gem", "id": "ruby" }] }
+      } } }
+    },
+    {
+      "id": "doll-move-element-within-vessel-appends",
+      "rule": "paper-doll/v3#editing-operations",
+      "subject": "paper-doll/v3",
+      "operation": "moveElement",
+      "input": { "args": [
+        { "root": "bag", "vessels": { "bag": { "contains": [
+          { "kind": "item", "id": "first" }, { "kind": "item", "id": "second" }
+        ] } } }, "bag", 0, "bag"
+      ] },
+      "expected": { "outcome": "ok", "value": { "root": "bag", "vessels": { "bag": { "contains": [
+        { "kind": "item", "id": "second" }, { "kind": "item", "id": "first" }
+      ] } } } }
+    },
+    {
+      "id": "doll-move-element-rejects-destination",
+      "rule": "paper-doll/v3#law-6-compatibility",
+      "subject": "paper-doll/v3",
+      "operation": "moveElement",
+      "input": { "args": [
+        { "root": "left", "vessels": {
+          "left": { "contains": [{ "kind": "item", "type": "gem" }] },
+          "right": { "accepts": [{ "kind": "status" }] }
+        } }, "left", 0, "right"
+      ] },
+      "expected": { "outcome": "error" }
+    },
+
+    {
+      "id": "chain-declare-kind",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "declareKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] },
+        "grapples", { "symmetric": true, "irreflexive": true, "fromMax": 1 }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "protocol": "paperchain/v1", "bodies": {},
+        "kinds": { "grapples": { "symmetric": true, "irreflexive": true, "fromMax": 1 } }, "relations": []
+      } }
+    },
+    {
+      "id": "chain-declare-kind-default-empty",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "declareKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] }, "tag"
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "protocol": "paperchain/v1", "bodies": {}, "kinds": { "tag": {} }, "relations": []
+      } }
+    },
+    {
+      "id": "chain-declare-kind-explicit-null",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "declareKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] }, "tag", null
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-declare-kind-duplicate",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "declareKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": { "link": {} }, "relations": [] }, "link", {}
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-delete-kind-record",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "deleteKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": { "link": { "fromMax": 2 } }, "relations": [] }, "link"
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] },
+        "declaration": { "fromMax": 2 }
+      } }
+    },
+    {
+      "id": "chain-delete-kind-rejects-used",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "deleteKind",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "link": {} }, "relations": [{ "kind": "link", "from": "hero/core", "to": "rival/core" }] },
+        "link"
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-insert-body-constructor-key",
+      "rule": "paperchain/v1#law-1-structure",
+      "subject": "paperchain/v1",
+      "operation": "insertBody",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] },
+        "constructor", { "root": "core", "vessels": { "core": {} } }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "protocol": "paperchain/v1",
+        "bodies": { "constructor": { "root": "core", "vessels": { "core": {} } } },
+        "kinds": {}, "relations": []
+      } }
+    },
+    {
+      "id": "chain-delete-body-record",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "deleteBody",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": {}, "relations": [] }, "hero"
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {}, "kinds": {}, "relations": [] },
+        "body": { "root": "core", "vessels": { "core": {} } }
+      } }
+    },
+    {
+      "id": "chain-delete-body-rejects-relation",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "deleteBody",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "link": {} }, "relations": [{ "kind": "link", "from": "hero/core", "to": "rival/core" }] },
+        "hero"
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-add-directional-relation",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "addRelation",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "watches": { "fromMax": 1, "toMax": 1 } }, "relations": [] },
+        { "kind": "watches", "from": "hero/core", "to": "rival/core" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "watches": { "fromMax": 1, "toMax": 1 } },
+        "relations": [{ "kind": "watches", "from": "hero/core", "to": "rival/core" }]
+      } }
+    },
+    {
+      "id": "chain-add-symmetric-reverse-duplicate",
+      "rule": "paperchain/v1#law-6-no-duplicates",
+      "subject": "paperchain/v1",
+      "operation": "addRelation",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "grapples": { "symmetric": true } },
+          "relations": [{ "kind": "grapples", "from": "rival/core", "to": "hero/core" }] },
+        { "kind": "grapples", "from": "hero/core", "to": "rival/core" }
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-remove-symmetric-preserves-stored-orientation",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "removeRelation",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "grapples": { "symmetric": true } },
+          "relations": [{ "kind": "grapples", "from": "rival/core", "to": "hero/core" }] },
+        { "kind": "grapples", "from": "hero/core", "to": "rival/core" }
+      ] },
+      "expected": { "outcome": "ok", "value": {
+        "scene": { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "grapples": { "symmetric": true } }, "relations": [] },
+        "relation": { "kind": "grapples", "from": "rival/core", "to": "hero/core" }
+      } }
+    },
+    {
+      "id": "chain-remove-missing-relation",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "removeRelation",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "watches": {} }, "relations": [] },
+        { "kind": "watches", "from": "hero/core", "to": "rival/core" }
+      ] },
+      "expected": { "outcome": "error" }
+    },
+    {
+      "id": "chain-relations-at-either-orientation",
+      "rule": "paperchain/v1#operations",
+      "subject": "paperchain/v1",
+      "operation": "relationsAt",
+      "input": { "args": [
+        { "protocol": "paperchain/v1", "bodies": {
+          "hero": { "root": "core", "vessels": { "core": {} } },
+          "rival": { "root": "core", "vessels": { "core": {} } }
+        }, "kinds": { "grapples": { "symmetric": true }, "watches": {} }, "relations": [
+          { "kind": "grapples", "from": "rival/core", "to": "hero/core" },
+          { "kind": "watches", "from": "hero/core", "to": "rival/core" }
+        ] }, "hero/core"
+      ] },
+      "expected": { "outcome": "ok", "value": [
+        { "kind": "grapples", "from": "rival/core", "to": "hero/core" },
+        { "kind": "watches", "from": "hero/core", "to": "rival/core" }
+      ] }
+    }
+  ]
+}

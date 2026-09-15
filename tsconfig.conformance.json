@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "rootDir": "conformance/typescript",
+    "outDir": "conformance/dist",
+    "sourceMap": true
+  },
+  "include": [
+    "conformance/typescript/extended_conformance.ts"
+  ]
+}
